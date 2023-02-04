@@ -1,1 +1,50 @@
-dfe
+name: Compile and Publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: windows-latest
+
+    steps:
+    
+    - name: Install 7zip
+      run: choco install 7zip
+      
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup environment
+      run: |
+        echo "##[group]Install dependencies"
+        echo "Checking CMake version..."
+        cmake --version
+    - name: Download YASM
+      run: |
+        choco install yasm
+        echo "##vso[task.prependpath]$(where yasm)"
+    - name: Compile
+      run: |
+        echo "##[group]Compile"
+        mkdir build
+        pushd build
+        cmake ..
+        popd
+        echo "##[endgroup]"
+    - name: Package compiled files
+      run: |
+        echo "##[group]Package compiled files"
+        7z a -t7z MathAnimations.7z MathAnimationsPrj
+        echo "##[endgroup]"
+  
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Publish
+      uses: actions/upload-artifact@v2
+      with:
+        name: MathAnimationsPrj
+        path: MathAnimationsPrj.zip
